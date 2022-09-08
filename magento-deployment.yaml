@@ -1,0 +1,74 @@
+# The following code is for single-instance magento2 Deployment and Service
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: magento
+  name: magento
+  
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      protocol: TCP
+  selector:
+    app: magento
+    tier: frontend
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: "magento-ip"
+    # networking.gke.io/managed-certificates: "ssl-cert"
+    kubernetes.io/ingress.class: "gce"
+  name: magento-ingress
+  
+spec:  
+ rules:
+   - host: magento.example.com
+     http:
+      paths:
+      - path: /*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+              name: magento
+              port:
+                number: 80
+---
+#This it to deploy magento2 container to Kubernetes
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: magento
+  labels:
+    app: magento
+spec:
+  selector:
+    matchLabels:
+      app: magento
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: magento
+        tier: frontend
+    spec:
+      containers:
+      - image: praveendev123/magento2  #https://hub.docker.com/repository/docker/praveendev123/magento2
+        name: magento
+        env:
+        - name: MAGENTO_DB_HOST
+          value: magento-mysql
+        - name: MAGENTO_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        ports:
+        - containerPort: 80
+          name: magento2

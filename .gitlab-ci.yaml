@@ -1,0 +1,31 @@
+image: docker:stable
+
+services:
+    - docker:dind
+
+stages:
+    - build
+    - deploy
+
+build:
+    stage: build
+    script:
+        - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+        - docker build --pull -t "$CI_REGISTRY_IMAGE" .
+        - docker push "$CI_REGISTRY_IMAGE"
+
+deploy:
+    image: devth/helm
+    stage: deploy
+    script:
+        - echo "$GOOGLE_KEY" > key.json
+        - gcloud auth activate-service-account  --key-file=elegant-matrix-298806-22a0cf9a3541.json --project=elegant-matrix-298806
+        - gcloud config set compute/zone us-central1-a
+        - gcloud config set project elegant-matrix-298806
+        - gcloud config set container/use_client_certificate False
+        - gcloud container clusters get-credentials new --zone us-central1-a
+        #- kubectl delete secret registry.gitlab.com
+        - kubectl create secret docker-registry registry.gitlab.com --docker-server=https:registry.gitlab.com --docker-username=praveendev123 --docker-password=praveen7 --docker-email=regardspraveen@gmail.com
+        - kubectl aaply -f secret.yaml
+        - kubectl apply -f magento-deployment.yaml
+        - kubectl apply -f mysql-deployment.yaml
