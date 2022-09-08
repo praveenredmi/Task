@@ -41,4 +41,7 @@ an on-prem k8s cluster.
 
 
 
-Included the .gitlab-ci.yml to Buid And Deploy on GKE.
+Included the .gitlab-ci.yml on commit to Buid And Deploy on GKE.
+
+
+For nightly basis we need to edit in cicd settings Schedule a new pipeline Custom ( Cron syntax ) 
